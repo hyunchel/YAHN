@@ -10,9 +10,11 @@ import {
   StyleSheet,
   Text,
   View,
-  ListView
+  ListView,
+  WebView,
+  TouchableHighlight,
 } from 'react-native';
-import { prettyTime } from './timestamp';
+import { StackNavigator } from 'react-navigation';
 import { parse, distanceInWordsToNow } from 'date-fns';
 
 
@@ -41,7 +43,24 @@ function fetchTopStories() {
     });
 };
 
-export default class YAHN extends Component {
+class StorySreen extends Component {
+  static navigationOptions = {
+    title: 'Story',
+  };
+  render() {
+    const { params } = this.props.navigation.state;
+    return (
+      <WebView
+        source={{uri: params.url}} 
+      />
+    );
+  }
+}
+
+class HomeScreen extends Component {
+  static navigationOptions = {
+    title: 'Hacker News',
+  } 
   constructor(props) {
     super(props);
     this.ds = new ListView.DataSource({rowHasChanged: (r1, r2) => r1 !== r2});
@@ -49,6 +68,14 @@ export default class YAHN extends Component {
       dataSource: this.ds.cloneWithRows([])
     };
     this.fetchHNTopStories();
+    this._onPressTitle = this._onPressTitle.bind(this);
+  }
+  _onPressTitle(url) {
+    const { navigate } = this.props.navigation;
+    navigate('Story', { url: url });
+  }
+  _onPressComment() {
+    console.log('comment touched!');
   }
   fetchHNTopStories() {
     return fetchTopStories()
@@ -70,13 +97,23 @@ export default class YAHN extends Component {
           renderRow={(rowData) => {
             return (
               <View style={styles.story}>
-                <View style={styles.titleSection}>
-                  <Text style={styles.title}>{shortenTitle(rowData.title)}</Text>
-                  <Text style={styles.subTitle}>{prettyTime(rowData.time)} | {rowData.score} points</Text>
-                </View>
-                <View style={styles.commentSection}>
-                  <Text style={styles.comment}>{rowData.descendants}</Text>
-                </View>
+                <TouchableHighlight
+                  style={styles.titleSection}
+                  onPress={() => this._onPressTitle(rowData.url)}
+                >
+                  <View>
+                    <Text style={styles.title}>{shortenTitle(rowData.title)}</Text>
+                    <Text style={styles.subTitle}>{prettyTime(rowData.time)} | {rowData.score} points</Text>
+                  </View>
+                </TouchableHighlight>
+                <TouchableHighlight
+                  style={styles.commentSection}
+                  onPress={this._onPressComment}
+                >
+                  <View>
+                    <Text style={styles.comment}>{rowData.descendants}</Text>
+                  </View>
+                </TouchableHighlight>
               </View>
               );
               }
@@ -128,6 +165,11 @@ const styles = StyleSheet.create({
   comment: {
 
   },
+});
+
+const YAHN = StackNavigator({
+  Home: { screen: HomeScreen },
+  Story: { screen: StorySreen },
 });
 
 AppRegistry.registerComponent('YAHN', () => YAHN);
