@@ -12,7 +12,21 @@ import {
   View,
   ListView
 } from 'react-native';
+import { prettyTime } from './timestamp';
+import { parse, distanceInWordsToNow } from 'date-fns';
 
+
+function shortenTitle(title) {
+  // FIXME: some random number picked here.
+  if (title.length > 34) {
+    return title.slice(0, 30) + ' ...';
+  };
+  return title;
+};
+
+function prettyTime(date) {
+  return distanceInWordsToNow(date * 1000);
+};
 
 function fetchTopStories() {
   return fetch('https://hacker-news.firebaseio.com/v0/topstories.json')
@@ -34,17 +48,12 @@ export default class YAHN extends Component {
     this.state = {
       dataSource: this.ds.cloneWithRows([])
     };
-    this.fetchHNTopStoryTitles();
+    this.fetchHNTopStories();
   }
-  fetchHNTopStoryTitles() {
+  fetchHNTopStories() {
     return fetchTopStories()
       .then((stories) => {
-        return stories.map((ele) => {
-          return ele.title;
-        })
-      })
-      .then((titles) => {
-        this.setState({dataSource: this.ds.cloneWithRows(titles)});
+        this.setState({dataSource: this.ds.cloneWithRows(stories)});
       })
       .catch((error) => {
         console.error(error);
@@ -58,7 +67,20 @@ export default class YAHN extends Component {
         </Text>
         <ListView
           dataSource={this.state.dataSource}
-          renderRow={(rowData) => <Text>{rowData}</Text>}
+          renderRow={(rowData) => {
+            return (
+              <View style={styles.story}>
+                <View style={styles.titleSection}>
+                  <Text style={styles.title}>{shortenTitle(rowData.title)}</Text>
+                  <Text style={styles.subTitle}>{prettyTime(rowData.time)} | {rowData.score} points</Text>
+                </View>
+                <View style={styles.commentSection}>
+                  <Text style={styles.comment}>{rowData.descendants}</Text>
+                </View>
+              </View>
+              );
+              }
+          }
         >
         </ListView>
       </View>
@@ -70,14 +92,41 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
+    alignItems: 'stretch',
     backgroundColor: '#F5FCFF',
     marginTop: 20,
+    paddingLeft: 20,
+    paddingRight: 20,
   },
   welcome: {
     fontSize: 20,
     textAlign: 'center',
     margin: 10,
+  },
+  story: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  titleSection: {
+    flex: 3,
+    justifyContent: 'center',
+    alignItems: 'flex-start', 
+    backgroundColor: '#6C5B7B',
+  },
+  commentSection: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center', 
+    backgroundColor: '#C06C84',
+  },
+  title: {
+  },
+  subTitle: {
+    fontSize: 10,
+  },
+  comment: {
+
   },
 });
 
